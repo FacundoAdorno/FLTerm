@@ -18,6 +18,8 @@
 #include "Fl_Term.h"
 #include <FL/fl_ask.H>
 #include <FL/filename.H>
+#include <cstdlib>
+#include <cctype>
 
 //defined in tiny2.cxx, returns false if editor is hiden
 bool show_editor(int x, int y, int w, int h);

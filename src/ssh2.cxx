@@ -21,6 +21,8 @@
 #include <time.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <cstdlib>
+#include <cstring>
 #include "ssh2.h"
 #include <thread>
 

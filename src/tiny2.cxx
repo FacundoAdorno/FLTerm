@@ -48,6 +48,9 @@ const char FLTERM[]="\r\033[32mFLTerm > \033[37m";
 #include <FL/Fl_Sys_Menu_Bar.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Native_File_Chooser.H>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
 
 #define TABHEIGHT	24
 #ifdef __APPLE__

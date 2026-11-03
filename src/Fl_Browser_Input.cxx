@@ -27,7 +27,7 @@ Fl_Browser_Input::Fl_Browser_Input(int X,int Y,int W,int H,const char* L):
 	browser->clear();
 	browser->textsize(16);
 	browser->box(FL_FLAT_BOX);
-	browser->has_scrollbar(Fl_Browser_::VERTICAL);
+	browser->has_scrollbar();
 	browser->hide();
 	id = 0;
 }
