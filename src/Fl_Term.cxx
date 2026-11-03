@@ -25,9 +25,13 @@
 bool show_editor(int x, int y, int w, int h);
 HOST *host_new(const char *hostname);
 
-#ifndef WIN32 
-#include <unistd.h>		// needed for usleep
+#ifndef WIN32
+#include <unistd.h>
+#define fl_chdir chdir
 #define Sleep(x) usleep((x)*1000)
+#else
+#include <direct.h>
+#define fl_chdir _chdir
 #endif
 #ifdef __APPLE__
 #define FL_CMD FL_META

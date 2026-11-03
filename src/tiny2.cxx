@@ -51,6 +51,13 @@ const char FLTERM[]="\r\033[32mFLTerm > \033[37m";
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
+#ifndef WIN32
+#include <unistd.h>
+#define fl_chdir chdir
+#else
+#include <direct.h>
+#define fl_chdir _chdir
+#endif
 
 #define TABHEIGHT	24
 #ifdef __APPLE__
@@ -889,10 +896,8 @@ int main(int argc, char **argv)
 	pWindow = new Fl_Double_Window(800, 640, "FLTerm");
 	{
 		pMenuBar=new Fl_Sys_Menu_Bar(0, 0, pWindow->w(), MENUHEIGHT);
-		pMenuBar->window_menu_style(Fl_Sys_Menu_Bar::no_window_menu);
 		pMenuBar->menu(menubar);
 		pMenuBar->textsize(18);
-		pMenuBar->about(about_cb, NULL);
 		pTerm = new Fl_Term(0, MENUHEIGHT, pWindow->w(),
 								pWindow->h()-MENUHEIGHT, "term");
 		pTerm->labelsize(16);
