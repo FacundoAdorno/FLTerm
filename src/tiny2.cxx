@@ -935,7 +935,13 @@ int main(int argc, char **argv)
 
 	Fl::add_timeout(0.02, redraw_cb);
 	Fl::add_timeout(1.0, title_cb);
-	if ( !local_edit ) connect_dlg(NULL, NULL);
+	if ( !local_edit ) {
+		if ( access("/bin/bash", X_OK)==0 ) {
+			term_connect("/bin/bash");
+		} else {
+			term_connect("/bin/sh");
+		}
+	}
 	Fl::run();
 
 	fl_chdir(cwd);			//in case cwd was changed in sftp_lcd
