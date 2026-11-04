@@ -6,6 +6,7 @@
 #include <FL/Fl.H>
 #include <FL/Enumerations.H>
 #include "json.hpp"
+#include <fstream>
 
 struct ColorTheme {
     std::string name;
