@@ -460,6 +460,18 @@ int Fl_Term::handle(int e)
 			case FL_Down: host->write(bAppCursor?"\033OB":"\033[B",3); break;
 			case FL_Right:host->write(bAppCursor?"\033OC":"\033[C",3); break;
 			case FL_Left: host->write(bAppCursor?"\033OD":"\033[D",3); break;
+			case FL_F+1:  host->write("\033OP", 3); break;
+			case FL_F+2:  host->write("\033OQ", 3); break;
+			case FL_F+3:  host->write("\033OR", 3); break;
+			case FL_F+4:  host->write("\033OS", 3); break;
+			case FL_F+5:  host->write("\033[15~", 5); break;
+			case FL_F+6:  host->write("\033[17~", 5); break;
+			case FL_F+7:  host->write("\033[18~", 5); break;
+			case FL_F+8:  host->write("\033[19~", 5); break;
+			case FL_F+9:  host->write("\033[20~", 5); break;
+			case FL_F+10: host->write("\033[21~", 5); break;
+			case FL_F+11: host->write("\033[23~", 5); break;
+			case FL_F+12: host->write("\033[24~", 5); break;
 			case FL_BackSpace: write("\177", 1); break;
 			case FL_Pause: pause_script(); break;
 			case FL_Enter:
