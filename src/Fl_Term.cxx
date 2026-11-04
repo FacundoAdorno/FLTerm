@@ -16,10 +16,30 @@
 //
 #include <thread>
 #include "Fl_Term.h"
+#include "theme.h"
+extern ColorTheme current_theme;
 #include <FL/fl_ask.H>
 #include <FL/filename.H>
 #include <cstdlib>
 #include <cctype>
+
+//defined in tiny2.cxx, returns false if editor is hiden
+bool show_editor(int x, int y, int w, int h);
+HOST *host_new(const char *hostname);
+
+#ifndef WIN32
+#include <unistd.h>
+#define fl_chdir chdir
+#define Sleep(x) usleep((x)*1000)
+#else
+#include <direct.h>
+#define fl_chdir _chdir
+#endif
+#ifdef __APPLE__
+#define FL_CMD FL_META
+#else
+#define FL_CMD FL_ALT
+#endif
 
 //defined in tiny2.cxx, returns false if editor is hiden
 bool show_editor(int x, int y, int w, int h);
@@ -95,7 +115,7 @@ void Fl_Term::puts( const char *buf, int len )	//parse text received from host
 		}
 }
 void Fl_Term::write(const char *buf, int len) //send text to host
-{ 
+{
 	if ( host->live() ) {
 		if ( !bGets ) {
 			if ( bEcho ) append(buf, len);
@@ -111,7 +131,7 @@ void Fl_Term::write(const char *buf, int len) //send text to host
 						if ( !bPassword ) append("\010 \010", 3);
 					}
 					break;
-				case '\r': 
+				case '\r':
 					keys[cursor++]=0;
 					append("\r\n", 2);
 					bReturn=true;
@@ -137,7 +157,7 @@ char *Fl_Term::gets(const char *prompt, int echo)	//get user input for host
 	bPassword = !echo;
 	int old_cursor = cursor;
 	for ( int i=0; i<600&&bGets&&(!bReturn); i++ ) {
-		if ( cursor>old_cursor ) { 
+		if ( cursor>old_cursor ) {
 			old_cursor=cursor;
 			i=0;
 		}
@@ -250,7 +270,7 @@ const unsigned int VT_attr[] = {
 	FL_BLUE, FL_MAGENTA, FL_CYAN, FL_WHITE
 };
 void Fl_Term::draw()
-{	
+{
 	redraw_pending=false;
 	fl_color(color());
 	fl_rectf(x(),y(),w(),h());
@@ -273,8 +293,10 @@ void Fl_Term::draw()
 				if ( ++n==line[ly+i+1]) break;
 				if ( n==sel_r || n==sel_l ) break;
 			}
-			unsigned int font_color = VT_attr[(int)attr[j]&0x0f];
-			unsigned int bg_color = VT_attr[(int)((attr[j]>>4)&0x0f)];
+			unsigned int font_idx = (int)(attr[j] & 0x0f);
+			unsigned int bg_idx = (int)((attr[j] >> 4) & 0x0f);
+			unsigned int font_color = (font_idx == 7 || font_idx == 0) ? current_theme.foreground : current_theme.palette[font_idx];
+			unsigned int bg_color = (bg_idx == 0) ? current_theme.background : current_theme.palette[bg_idx];
 			int wi = fl_width(buff+j, n-j);
 			if ( j>=sel_l && j<sel_r ) {
 				fl_color(selection_color());
@@ -288,7 +310,7 @@ void Fl_Term::draw()
 				}
 				fl_color( font_color );
 			}
-			int m = (buff[n-1]==0x0a) ? n-1 : n;	//don't draw LF, 
+			int m = (buff[n-1]==0x0a) ? n-1 : n;	//don't draw LF,
 			//which will result in little squares on some platforms
 			fl_draw( buff+j, m-j, dx, dy );
 			dx += wi;
@@ -306,7 +328,7 @@ void Fl_Term::draw()
 			fl_rectf(dx, dy+font_height, font_width, 4);
 		}
 	}
-	
+
 	if ( bScrollbar) {
 		fl_color(FL_DARK3);			//draw scrollbar
 		fl_rectf(x()+w()-8, y(), 8, y()+h());
@@ -534,7 +556,7 @@ void Fl_Term::append( const char *newtext, int len )
 {
 	const unsigned char *p = (const unsigned char *)newtext;
 	const unsigned char *zz = p+len;
-	
+
 	append_mtx.lock();	//only one thread can append to buffer at a time
 	if ( fpLogFile!=NULL ) fwrite( newtext, 1, len, fpLogFile );
 	if ( bEscape ) p = vt100_Escape( p, zz-p );
@@ -1026,14 +1048,14 @@ const unsigned char *Fl_Term::vt100_Escape(const unsigned char *sz, int cnt)
 			else {								//scroll
 				int len = line[screen_y+roll_bot+1]-line[screen_y+roll_top+1];
 				int x = cursor_x-line[cursor_y];
-				memcpy(buff+line[screen_y+roll_top], 
+				memcpy(buff+line[screen_y+roll_top],
 						buff+line[screen_y+roll_top+1], len);
-				memcpy(attr+line[screen_y+roll_top], 
+				memcpy(attr+line[screen_y+roll_top],
 						attr+line[screen_y+roll_top+1], len);
 				len = line[screen_y+roll_top+1]-line[screen_y+roll_top];
 				for ( int i=roll_top+1; i<=roll_bot; i++ )
 					line[screen_y+i] = line[screen_y+i+1]-len;
-				buff_clear(line[screen_y+roll_bot], 
+				buff_clear(line[screen_y+roll_bot],
 					line[screen_y+roll_bot+1]-line[screen_y+roll_bot]);
 				cursor_x = line[cursor_y]+x;
 			}
@@ -1188,7 +1210,7 @@ int Fl_Term::command(const char *cmd, const char **preply)
 		const char *p = strchr(++cmd, ' ');	//p points to cmd parameter
 		if ( p==NULL ) p="";
 		while (*p==' ') p++;
-		
+
 		if ( strncmp(cmd,"Clear",5)==0 ) clear();
 		else if ( strncmp(cmd,"Wait",4)==0 ) Sleep(atoi(p)*1000);
 		else if ( strncmp(cmd,"Log", 3)==0 ) {
@@ -1240,13 +1262,13 @@ int Fl_Term::command(const char *cmd, const char **preply)
 				fl_decode_uri(sPrompt);
 				iPrompt = strlen(sPrompt);
 			}
-			else 
+			else
 				learn_prompt();
 			if ( preply!=NULL ) *preply = sPrompt;
 			rc = iPrompt;
 		}
 		else if ( strncmp(cmd,"scp",3)==0
-				||strncmp(cmd,"tun",3)==0 
+				||strncmp(cmd,"tun",3)==0
 				||strncmp(cmd,"xmodem",6)==0 ) {
 			mark_prompt();
 			host->command(cmd);
@@ -1336,7 +1358,7 @@ void Fl_Term::copier(char *files)
 			if ( p1!=NULL ) {
 				strncpy(dst, p2, p1-p2);
 				dst[p1-p2]='/';
-				if ( p1-p2<255 ) 
+				if ( p1-p2<255 )
 					dst[p1-p2+1]=0;
 				else
 					dst[255]=0;
@@ -1366,7 +1388,7 @@ void Fl_Term::scripter(char *cmds)
 	bScriptRun = true; bScriptPause = false;
 	while ( bScriptRun && p1!=NULL ) {
 		if ( bScriptPause ) {
-			Sleep(100); 
+			Sleep(100);
 		}
 		else {
 			p0 = p1;

@@ -31,10 +31,14 @@ const char ABOUT_TERM2[]="\r\n\n\
 const char FLTERM[]="\r\033[32mFLTerm > \033[37m";
 
 #include <thread>
-#include "host.h"
 #include "ssh2.h"
+#include "host.h"
 #include "Fl_Term.h"
 #include "Fl_Browser_Input.h"
+#include "theme.h"
+ColorTheme current_theme;
+void apply_theme(const std::string& name);
+void theme_cb(Fl_Widget *w, void *data);
 
 #include <FL/platform.H>	// needed for fl_display
 #include <FL/Fl.H>
@@ -99,7 +103,7 @@ void setTransparency(Fl_Window *pWin, double alpha)
 	if (!(exstyle & WS_EX_LAYERED)) {
 		SetWindowLongPtr(hwnd, GWL_EXSTYLE, exstyle | WS_EX_LAYERED);
 	}
-	SetLayeredWindowAttributes(hwnd, 0, alpha*255, LWA_ALPHA);	
+	SetLayeredWindowAttributes(hwnd, 0, alpha*255, LWA_ALPHA);
 }
 #elif defined (__linux__) || defined (__unix__)
 void setTransparency(Fl_Window *pWin, double alpha)
@@ -110,6 +114,41 @@ void setTransparency(Fl_Window *pWin, double alpha)
 					PropModeReplace, (unsigned char *)&opacity, 1);
 }
 #endif
+void apply_theme(const std::string& name) {
+#ifndef THEME_DIR
+#define THEME_DIR "themes"
+#endif
+    std::string path = std::string(THEME_DIR) + "/" + name + ".json";
+    if (!load_theme_file(path, current_theme)) {
+        path = "themes/" + name + ".json";
+        load_theme_file(path, current_theme);
+    }
+    if (pTabs != NULL) {
+        for (int i = 0; i < pTabs->children(); i++) {
+            Fl_Term *pt = (Fl_Term *)pTabs->child(i);
+            if (pt) {
+                pt->color(current_theme.background);
+                pt->redraw();
+            }
+        }
+    } else if (pTerm) {
+        pTerm->color(current_theme.background);
+        pTerm->redraw();
+    }
+    if (pCmd) {
+        pCmd->color(current_theme.background);
+        pCmd->textcolor(current_theme.foreground);
+        pCmd->cursor_color(current_theme.cursor);
+        pCmd->redraw();
+    }
+}
+void theme_cb(Fl_Widget *w, void *data) {
+    if (data) {
+        const char* color = (const char*)data;
+        apply_theme((const char*)data);
+        printf("Theme Color changed to %s.", color);
+    }
+}
 #define OPEN_FILE 	Fl_Native_File_Chooser::BROWSE_FILE
 #define SAVE_FILE	Fl_Native_File_Chooser::BROWSE_SAVE_FILE
 static Fl_Native_File_Chooser fnfc;
@@ -181,14 +220,14 @@ void tab_act(Fl_Term *pt)
 	strcpy(label, pTerm->label());	//add "x" to current active tab
 	strcat(label, " @-31+");
 	pTerm->copy_label(label);
-	
+
 	title_changed = true;
 }
 void tab_cb(Fl_Widget *w)
 {
 	if ( pTabs->value()==pTerm ) {		//clicking on active tab
 		if ( pTerm->live() )			//confirm before disconnect
-			if ( fl_choice("Disconnect from %s?", "Yes", "No", 
+			if ( fl_choice("Disconnect from %s?", "Yes", "No",
 							0, pTerm->label())==1 ) return;
 		pTerm->disconn();
 		pTerm->clear();
@@ -199,7 +238,7 @@ void tab_cb(Fl_Widget *w)
 		}
 	}
 	tab_act((Fl_Term *)pTabs->value());	//activate new tab
-	pTabs->redraw(); 
+	pTabs->redraw();
 }
 void tab_new()
 {
@@ -386,7 +425,7 @@ void connect_cb(Fl_Widget *w)
 	}
 	pConnectDlg->hide();
 	if ( pCmd->add(buf)!=0 )
-		pMenuBar->insert(pMenuBar->find_index("Script")-1, 
+		pMenuBar->insert(pMenuBar->find_index("Script")-1,
 							buf+1, 0, menu_host_cb);
 	term_connect(buf+1);
 }
@@ -449,7 +488,7 @@ void font_cb(Fl_Widget *, long)
 	int n = numsizes[fontnum];
 	int *s = sizes[fontnum];
 	if (!n) {// no sizes
-	} 
+	}
 	else if (s[0] == 0) {// many sizes;
 		int j = 1;
 		for (int i=6; i<=32 || i<s[n-1]; i++) {
@@ -458,7 +497,7 @@ void font_cb(Fl_Widget *, long)
 			sizeobj->add(buf);
 			if ( i==fontsize ) sizeobj->value(sizeobj->size());
 		}
-	} 
+	}
 	else {// some sizes
 		int w = 0;
 		for (int i = 0; i < n; i++) {
@@ -469,7 +508,7 @@ void font_cb(Fl_Widget *, long)
 		}
 	}
 }
-void size_cb(Fl_Widget *, long) 
+void size_cb(Fl_Widget *, long)
 {
 	int i = sizeobj->value();
 	if (!i) return;
@@ -504,11 +543,11 @@ void font_dlg_build()
 	sizes = new int*[k];
 	numsizes = new int[k];
 	for (long i = 0; i < k; i++) {
-		int t; 
+		int t;
 		const char *name = Fl::get_font_name((Fl_Font)i,&t);
 		if (t==0 ) {
 			fontobj->add(name, (void *)i);
-			if ( strcmp(fontname, name)==0 ) { 
+			if ( strcmp(fontname, name)==0 ) {
 				fontobj->select(fontobj->size());
 				fontnum = i;
 			}
@@ -574,7 +613,7 @@ void run_cb(Fl_Widget *w, void *data)
 		pCmd->add(cmd);
 	}
 }
-void quit_cb(Fl_Widget *w, void *data) 
+void quit_cb(Fl_Widget *w, void *data)
 {
 	pTerm->quit_script();
 }
@@ -590,7 +629,7 @@ void pause_cb(Fl_Widget *w, void *data)
 void cmd_send(Fl_Term *t, const char *cmd)
 {
 	if ( *cmd=='!' ) {
-		if ( strncmp(cmd, "!scp ", 5)==0 || strncmp(cmd, "!tun", 4)==0 ) 
+		if ( strncmp(cmd, "!scp ", 5)==0 || strncmp(cmd, "!tun", 4)==0 )
 			pTerm->run_script(cmd);
 		else if ( strncmp(cmd, "!script ", 8)==0 )
 			script_open(cmd+8);
@@ -683,7 +722,7 @@ void menu_cb(Fl_Widget *w, void *data)
 		pTerm->disconn();
 	}
 	else if ( strcmp(menutext, "Save...")==0 ) {
-		const char *fname = file_chooser("save buffer to file:", 
+		const char *fname = file_chooser("save buffer to file:",
 										 "Text\t*.txt", SAVE_FILE);
 		if ( fname!=NULL ) pTerm->save(fname);
 	}
@@ -726,7 +765,7 @@ void close_cb(Fl_Widget *w, void *data)
 					if (fl_choice("Disconnect all and exit?",
 									"No", "Yes", 0)==0 ) return;
 					confirmed = true;
-				} 
+				}
 				pt->disconn();
 			}
 		}
@@ -752,9 +791,11 @@ Fl_Menu_Item menubar[] = {
 {"Quit",		0,			quit_cb},
 {"Pause",		0,			pause_cb,0,	FL_MENU_DIVIDER},
 {0},
-{"Options", 	0,			0,		0,	FL_SUBMENU},
-{"&Font...",	FL_CMD+'f',	font_dlg},
-{"Local &Edit",	FL_CMD+'e',	menu_cb,0,	FL_MENU_TOGGLE},
+	{"Options", 	0,			0,		0,	FL_SUBMENU},
+	{"&Font...",	FL_CMD+'f',	font_dlg},
+	{"Theme/&Dark", 0,          theme_cb,   (void*)"dark"},
+	{"Theme/&Light",0,          theme_cb,   (void*)"light"},
+	{"Local &Edit",	FL_CMD+'e',	menu_cb,0,	FL_MENU_TOGGLE},
 {"Send to All",	0,			menu_cb,0,	FL_MENU_TOGGLE},
 {"Transparency",0, 			menu_cb,0, 	FL_MENU_TOGGLE},
 {0},
@@ -778,7 +819,7 @@ const char *HOMEDIR = "USERPROFILE";
 const char *HOMEDIR = "HOME";
 #endif
 const char *DICTFILE = ".FLTerm";
-void load_dict()			
+void load_dict()
 {
 	FILE *fp = fopen(DICTFILE, "r");
 	if ( fp==NULL ) {// current directory doesn't have .hist
@@ -852,7 +893,7 @@ void save_dict()
 		fprintf(fp, "~FontFace %s\n", Fl::get_font_name(fontnum, &t));
 		fprintf(fp, "~FontSize %d\n", fontsize);
 		if ( local_edit ) fprintf(fp, "~LocalEdit\n");
-		if ( opacity!=1.0 ) 
+		if ( opacity!=1.0 )
 			fprintf(fp, "~WindowOpacity %.3f\n", opacity);
 
 		const char *p = pCmd->first();
@@ -925,6 +966,7 @@ int main(int argc, char **argv)
 
 	connect_dlg_build();
 	load_dict();		//get fontface
+	apply_theme("dark");
 	font_dlg_build();	//get fontnum
 	pTerm->textfont(fontnum);
 	pTerm->textsize(fontsize);
@@ -1050,7 +1092,7 @@ void httpd( int s0 )
 					replen-=len;
 				}
 				if ( len<0 ) break;
-			}	
+			}
 		}
 		closesocket(http_s1);
 	}
