@@ -150,7 +150,11 @@ void term_cb(Fl_Widget *w, void *data )	//called when term connection changes
 		title_changed = true;
 	}
 	if ( data==NULL ) {//disconnected
-		if ( pCmd->visible() ) term->disp(FLTERM);
+		if ( pTabs==NULL ) {
+			exit(0);
+		} else {
+			if ( pCmd->visible() ) term->disp(FLTERM);
+		}
 	}
 	if ( pTabs!=NULL ) pTabs->redraw();
 }
