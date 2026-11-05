@@ -16,6 +16,54 @@ struct ColorTheme {
     Fl_Color palette[16];
 };
 
+struct ThemeEntry {
+    std::string name;
+    std::string filename;
+    bool available;
+};
+
+inline std::vector<ThemeEntry> get_available_themes() {
+    std::vector<ThemeEntry> themes;
+#ifndef THEME_DIR
+#define THEME_DIR "themes"
+#endif
+    std::string path = std::string(THEME_DIR) + "/themes.json";
+    std::ifstream f(path);
+    if (!f.is_open()) {
+        f.open("themes/themes.json");
+    }
+    if (!f.is_open()) return themes;
+
+    nlohmann::json j = nlohmann::json::parse(f);
+
+    // Parse objects manually within the content string using json operator[]
+    size_t pos = 0;
+    while ((pos = j.get_content().find("{", pos)) != std::string::npos) {
+        size_t end = j.get_content().find("}", pos);
+        if (end == std::string::npos) break;
+        std::string obj_str = j.get_content().substr(pos, end - pos + 1);
+
+        // Parse individual object via istringstream using json::parse
+        std::istringstream iss(obj_str);
+        nlohmann::json item = nlohmann::json::parse(iss);
+
+        std::string name = item["name"];
+        std::string filename = item["filename"];
+        if (!name.empty() && !filename.empty()) {
+            std::string theme_path = std::string(THEME_DIR) + "/" + filename;
+            std::ifstream test_file(theme_path);
+            bool exists = test_file.is_open();
+            if (!exists) {
+                test_file.open("themes/" + filename);
+                exists = test_file.is_open();
+            }
+            themes.push_back({name, filename, exists});
+        }
+        pos = end + 1;
+    }
+    return themes;
+}
+
 inline Fl_Color hex_to_flcolor(const std::string& hex) {
     if (hex.empty() || hex[0] != '#') return FL_BLACK;
     unsigned int r = 0, g = 0, b = 0;

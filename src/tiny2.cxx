@@ -114,13 +114,13 @@ void setTransparency(Fl_Window *pWin, double alpha)
 					PropModeReplace, (unsigned char *)&opacity, 1);
 }
 #endif
-void apply_theme(const std::string& name) {
+void apply_theme(const std::string& filename) {
 #ifndef THEME_DIR
 #define THEME_DIR "themes"
 #endif
-    std::string path = std::string(THEME_DIR) + "/" + name + ".json";
+    std::string path = std::string(THEME_DIR) + "/" + filename;
     if (!load_theme_file(path, current_theme)) {
-        path = "themes/" + name + ".json";
+        path = "themes/" + filename;
         load_theme_file(path, current_theme);
     }
     if (pTabs != NULL) {
@@ -793,8 +793,6 @@ Fl_Menu_Item menubar[] = {
 {0},
 	{"Options", 	0,			0,		0,	FL_SUBMENU},
 	{"&Font...",	FL_CMD+'f',	font_dlg},
-	{"Theme/&Dark", 0,          theme_cb,   (void*)"dark"},
-	{"Theme/&Light",0,          theme_cb,   (void*)"light"},
 	{"Local &Edit",	FL_CMD+'e',	menu_cb,0,	FL_MENU_TOGGLE},
 {"Send to All",	0,			menu_cb,0,	FL_MENU_TOGGLE},
 {"Transparency",0, 			menu_cb,0, 	FL_MENU_TOGGLE},
@@ -966,6 +964,16 @@ int main(int argc, char **argv)
 
 	connect_dlg_build();
 	load_dict();		//get fontface
+
+	// Populate dynamic themes from themes.json into menu
+	std::vector<ThemeEntry> themes = get_available_themes();
+	for (const auto& th : themes) {
+		char path_buf[512];
+		snprintf(path_buf, sizeof(path_buf), "Theme/%s", th.name.c_str());
+		int flags = th.available ? 0 : FL_MENU_INACTIVE;
+		pMenuBar->add(path_buf, 0, theme_cb, strdup(th.filename.c_str()), flags);
+	}
+
 	apply_theme("dark");
 	font_dlg_build();	//get fontnum
 	pTerm->textfont(fontnum);

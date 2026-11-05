@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Dark",
+    "filename": "dark.json"
+  },
+  {
+    "name": "Light",
+    "filename": "light.json"
+  },
+  {
+    "name": "Simple Green",
+    "filename": "simplegreen.json"
+  },
+  {
+    "name": "Simple Magenta",
+    "filename": "simplemagenta.json"
+  },
+  {
+    "name": "Simple Blue",
+    "filename": "simpleblue.json"
+  }
+]

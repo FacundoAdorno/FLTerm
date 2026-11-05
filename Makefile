@@ -1,5 +1,5 @@
 #Makefile for Linux build with mbedTLS crypto backend
-HEADERS = src/host.h src/ssh2.h
+HEADERS = src/host.h src/ssh2.h src/theme.h src/json.hpp
 OBJS = obj/tiny2.o obj/ssh2.o obj/host.o obj/Fl_Term.o obj/Fl_Browser_Input.o
 
 PREFIX ?=
@@ -22,7 +22,7 @@ obj/%.o: src/%.cxx ${HEADERS}
 install: tinyTerm2
 	mkdir -p $(BIN_DIR)
 	mkdir -p $(THEME_DIR)
-	mv tinyTerm2 $(BIN_DIR)/flterm
+	cp tinyTerm2 $(BIN_DIR)/flterm
 	cp themes/*.json $(THEME_DIR)/
 
 clean:

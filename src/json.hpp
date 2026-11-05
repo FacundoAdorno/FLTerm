@@ -7,8 +7,7 @@
 
 namespace nlohmann {
 class json {
-    std::string content;
-public:
+    const std::string& get_content() const { return content; }
     static json parse(std::istream& is) {
         json j;
         std::stringstream ss;
