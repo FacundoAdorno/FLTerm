@@ -933,6 +933,22 @@ int main(int argc, char **argv)
 {
 	httpd_init();
 	libssh2_init(0);
+		
+	// Detect environment encoding and set appropriate locale for ASCII/UTF fallback
+	setlocale(LC_ALL, "");
+	const char *lc = setlocale(LC_CTYPE, NULL);
+	bool is_utf8 = false;
+	if (lc != nullptr) {
+		std::string s(lc);
+		if (s.find("UTF") != std::string::npos || s.find("utf") != std::string::npos) {
+			is_utf8 = true;
+		}
+	}
+	if (!is_utf8) {
+		setenv("LANG", "C", 1);
+		setenv("LC_ALL", "C", 1);
+	}
+
 	Fl::scheme("gtk+");
 	Fl::lock();
 

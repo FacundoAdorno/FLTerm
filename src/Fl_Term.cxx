@@ -620,7 +620,16 @@ void Fl_Term::append( const char *newtext, int len )
 				p = telnet_options(p-1, zz-p+1);
 				break;
 		case 0xe2:
-			if ( bAltScreen ) {//utf8 box drawing hack
+			if ( bAltScreen ) {
+				// Check if locale supports UTF-8 box drawing or fallback to ASCII
+				const char *lc = setlocale(LC_CTYPE, NULL);
+				bool is_utf8 = (lc != nullptr && (strstr(lc, "UTF") || strstr(lc, "utf")));
+				if (!is_utf8) {
+					// Skip UTF-8 3-byte box drawing sequence in ASCII-only environments
+					p += 2;
+					c = ' ';
+					break;
+				}
 				c = ' ';
 				if ( *p++==0x94 ) {
 					switch ( *p ) {
