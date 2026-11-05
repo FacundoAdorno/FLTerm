@@ -647,6 +647,12 @@ void Fl_Term::append( const char *newtext, int len )
 					p++;
 				}//fall through
 		default:
+			{
+				const char *loc = setlocale(LC_CTYPE, NULL);
+				if ( (c & 0x80) && !(loc != nullptr && (strstr(loc, "UTF") || strstr(loc, "utf"))) ) {
+					c = ' ';
+				}
+			}
 			if ( bGraphic ) {
 				switch ( c ){//charset 2 box drawing
 					case 'q': c='_'; break;
