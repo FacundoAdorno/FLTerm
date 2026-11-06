@@ -947,6 +947,9 @@ int main(int argc, char **argv)
 	if (!is_utf8) {
 		setenv("LANG", "C", 1);
 		setenv("LC_ALL", "C", 1);
+		setenv("TERM", "linux", 1);
+	} else {
+		setenv("TERM", "xterm-256color", 1);
 	}
 
 	Fl::scheme("gtk+");
